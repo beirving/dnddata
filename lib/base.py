@@ -3,18 +3,19 @@ from py2neo import (
     NodeMatcher,
     RelationshipMatcher,
     Node,
-    Relationship
+    Relationship,
+    Transaction
 )
+from typing import Union
 import json
 import os
 
 
 class BaseData(object):
     def __init__(self, cred_file_loc: str) -> None:
-        self._name = None
         self._node = None
-        self._attributes = {}
         self._edges = {}
+        self._relations = {}
         self._graph = None
         if os.path.isfile(cred_file_loc):
             self._cred_loc = cred_file_loc
@@ -34,7 +35,7 @@ class BaseData(object):
             del config
         return self._graph
 
-    def get_node(self, node: Node):
+    def get_node(self, node: Node) -> Union[Node,bool]:
         matcher = NodeMatcher(self.graph())
         name = f"{node['name']}"
         label = f"{node.labels}".replace(":", "")
@@ -44,78 +45,52 @@ class BaseData(object):
         else:
             return result
 
+    def create_node(self, label: str = None, name: str = None) -> Node:
+        if self._node is None:
+            self._node = Node(label, name=name)
+        return self._node
 
+    def node(self, node: Node = None) -> Node:
+        if node is not None:
+            self._node = node
+        return self._node
 
-    # def close(self) -> None:
-    #     self._driver.close()
+    def relations(self):
+        return self._relations
 
-    # def name(self, value: str = None) -> str:
-    #     if value is not None:
-    #         self._name = value
-    #     return self._name
-    #
-    # def node(self, value: str = None) -> str:
-    #     if value is not None:
-    #         self._node = value
-    #     return self._node
-    #
-    # def attributes(self, key: str = None, value: str = None) -> dict:
-    #     if key is not None:
-    #         self._attributes[key] = value
-    #     return self._attributes
-    #
-    # def edges(self, key: str = None, value=None) -> dict:
-    #     if key is not None:
-    #         self._edges[key] = value
-    #     return self._edges
-    #
-    # def output_attributes(self) -> str:
-    #     output = ''
-    #     if len(self._attributes) > 0:
-    #         for key, value in self._attributes.items():
-    #             if type(value) is str:
-    #                 value = f"'{value}'"
-    #             if len(output) == 0:
-    #                 output = f"{key}:{value}"
-    #             output = output + f", {key}:{value}"
-    #     return output
-    #
-    # def search_exists(self):
-    #     self.create_connection()
-    #     query = f"MATCH (n:{self.node()} {{name:'{self.name()}'}}) RETURN id(n)"
-    #     with self._driver.session() as session:
-    #         result = session.write_transaction(self._run_and_return, query)
-    #         self.close()
-    #         if result.single() is None:
-    #             return False
-    #         return True
-    #
-    # def create(self) -> str:
-    #     output = f"CREATE (n:{self.node()} {{name:'{self.name()}'}}) "
-    #     output = output + "SET n += {{{}}} ".format(self.output_attributes())
-    #     output = output + "RETURN id(n)"
-    #     return output
-    #
-    # def update(self) -> str:
-    #     output = f"MATCH (n:{self.node()} {{name:'{self.name()}'}}) "
-    #     output = output + "SET n += {{{}}} ".format(self.output_attributes())
-    #     output = output + "RETURN id(n)"
-    #     return output
-    #
-    # def save(self) -> int:
-    #     if self.search_exists():
-    #         query = self.update()
-    #     else:
-    #         query = self.create()
-    #
-    #     self.create_connection()
-    #     with self._driver.session() as session:
-    #         result = session.write_transaction(self._run_and_return, query)
-    #         node = result.single()
-    #         self.close()
-    #         print(type(node))
-    #         print(node)
-    #
-    # @staticmethod
-    # def _run_and_return(tx, query):
-    #     return tx.run(query)
+    def edges(self) -> dict:
+        return self._edges
+
+    def assign_attributes(self, data: dict) -> None:
+        for key, value in data.items():
+            if key in self.edges():
+                self._relations[key] = value
+            else:
+                self._node[key] = value
+
+    def create_or_update(self, label: str, data: dict, context: Transaction):
+        self.create_node(label=label, name=data['name'])
+
+        check_node = self.get_node(self.node())
+        exits = False
+        if type(check_node) is Node:
+            exits = True
+            self.node(check_node)
+
+        self.assign_attributes(data)
+
+        if exits is False:
+            context.create(self.node())
+            print(f"Created {label}")
+        else:
+            context.push(self.node())
+            print(f"Updated {label}")
+
+    def handle_relations(self, context: Transaction):
+        pass
+
+    def create_or_merge_relationship(self, relation: Relationship, context: Transaction):
+        if self.graph().exists(relation) is True:
+            context.merge(relation)
+        else:
+            context.create(relation)

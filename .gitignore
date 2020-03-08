@@ -1,3 +1,4 @@
 /creds/*
 .idea
 venv
+lib/__pycache__
