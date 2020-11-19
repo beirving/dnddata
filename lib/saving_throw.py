@@ -2,7 +2,7 @@ from lib.base import BaseData
 
 
 class SavingThrow(BaseData):
-    def edges(self) -> dict:
+    def edges(self) -> list:
         return self._edges
 
     @staticmethod

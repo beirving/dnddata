@@ -1,6 +1,6 @@
 from lib.base import BaseData
 
 
-class LegendaryAction(BaseData):
+class Classes(BaseData):
     def edges(self) -> list:
         return self._edges

@@ -58,7 +58,7 @@ class BaseData(object):
     def relations(self):
         return self._relations
 
-    def edges(self) -> dict:
+    def edges(self) -> list:
         return self._edges
 
     def assign_attributes(self, data: dict) -> None:
@@ -66,6 +66,9 @@ class BaseData(object):
             if key in self.edges():
                 self._relations[key] = value
             else:
+                if type(value) is list:
+                    separator = ', '
+                    value = separator.join(value)
                 self._node[key] = value
 
     def create_or_update(self, label: str, data: dict, context: Transaction):

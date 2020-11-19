@@ -45,7 +45,10 @@ class Monster(base.BaseData):
             "speed",
             "spellcasting",
             "subtype",
-            "type"
+            "type",
+            "_id",
+            "index",
+            "url"
         ]
         return self._edges
 
