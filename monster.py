@@ -5,7 +5,7 @@ from lib.monster import Monster
 base_url="http://dnd5eapi.co"
 uri = "/api/monsters/lich"
 
-request = requests.get(base_url+uri, verify=false)
+request = requests.get(base_url+uri, verify=False)
 data = request.json()
 
 monster = Monster(cred_file_loc="creds/db.json")
