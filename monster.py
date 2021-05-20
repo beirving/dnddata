@@ -15,7 +15,7 @@ context = monster.graph().begin()
 monster.create_or_update("Monster", data, context)
 
 monster.handle_relations(context)
-context.commit()
+monster.graph().commit(context)
 
 
 
