@@ -132,14 +132,14 @@ class Monster(base.BaseData):
 
     def proficiencies(self, context: Transaction):
         for item in self._relations['proficiencies']:
-            if item['name'].find("Saving") > -1:
+            if item['proficiency']['name'].find("Saving") > -1:
                 node_obj = saving_throw.SavingThrow(self._cred_loc)
-                format_name = node_obj.trim_extra(item['name'])
+                format_name = node_obj.trim_extra(item['proficiency']['name'])
                 node_obj.create_or_update("Saving Throw", {"name": format_name}, context)
                 relation = Relationship(self.node(), f"HAS_SAVING_THROW", node_obj.node())
             else:
                 node_obj = proficiency.Proficiency(self._cred_loc)
-                format_name = node_obj.trim_extra(item['name'])
+                format_name = node_obj.trim_extra(item['proficiency']['name'])
                 node_obj.create_or_update("Proficiency", {"name": format_name}, context)
                 relation = Relationship(self.node(), f"HAS_PROFICIENCY", node_obj.node())
             relation['value'] = item['value']
